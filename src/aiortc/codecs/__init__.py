@@ -132,9 +132,10 @@ def get_capabilities(kind: str) -> RTCRtpCapabilities:
             )
             rtx_added = True
 
-    headerExtensions = []
-    for extension in HEADER_EXTENSIONS[kind]:
-        headerExtensions.append(RTCRtpHeaderExtensionCapability(uri=extension.uri))
+    headerExtensions = [
+        RTCRtpHeaderExtensionCapability(uri=extension.uri)
+        for extension in HEADER_EXTENSIONS[kind]
+    ]
     return RTCRtpCapabilities(codecs=codecs, headerExtensions=headerExtensions)
 
 

@@ -22,7 +22,7 @@ class CodecTestCase(TestCase):
         frames = []
         timestamp = 0
         samples_per_frame = int(AUDIO_PTIME * sample_rate)
-        for i in range(count):
+        for _ in range(count):
             frames.append(
                 self.create_audio_frame(
                     samples=samples_per_frame,
@@ -61,17 +61,15 @@ class CodecTestCase(TestCase):
         """
         Create consecutive blank video frames.
         """
-        frames = []
-        for i in range(count):
-            frames.append(
-                self.create_video_frame(
-                    width=width,
-                    height=height,
-                    pts=int(i / time_base / 30),
-                    time_base=time_base,
-                )
+        return [
+            self.create_video_frame(
+                width=width,
+                height=height,
+                pts=int(i / time_base / 30),
+                time_base=time_base,
             )
-        return frames
+            for i in range(count)
+        ]
 
     def roundtrip_audio(self, codec, output_layout, output_sample_rate, drop=[]):
         """

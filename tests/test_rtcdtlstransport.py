@@ -246,10 +246,10 @@ class RTCDtlsTransportTest(TestCase):
         session1 = RTCDtlsTransport(transport1, [certificate1])
 
         # receive truncated RTP
-        await session1._handle_rtp_data(RTP[0:8], 0)
+        await session1._handle_rtp_data(RTP[:8], 0)
 
         # receive truncated RTCP
-        await session1._handle_rtcp_data(RTCP[0:8])
+        await session1._handle_rtcp_data(RTCP[:8])
 
     @asynctest
     async def test_srtp_unprotect_error(self):
@@ -445,7 +445,7 @@ class RtpRouterTest(TestCase):
 
         # BYE
         packet = RtcpByePacket(sources=[1234, 2345])
-        self.assertEqual(router.route_rtcp(packet), set([receiver]))
+        self.assertEqual(router.route_rtcp(packet), {receiver})
 
         # RR
         packet = RtcpRrPacket(
@@ -462,7 +462,7 @@ class RtpRouterTest(TestCase):
                 )
             ],
         )
-        self.assertEqual(router.route_rtcp(packet), set([sender]))
+        self.assertEqual(router.route_rtcp(packet), {sender})
 
         # SR
         packet = RtcpSrPacket(
@@ -482,11 +482,11 @@ class RtpRouterTest(TestCase):
                 )
             ],
         )
-        self.assertEqual(router.route_rtcp(packet), set([receiver, sender]))
+        self.assertEqual(router.route_rtcp(packet), {receiver, sender})
 
         # PSFB - PLI
         packet = RtcpPsfbPacket(fmt=RTCP_PSFB_PLI, ssrc=1234, media_ssrc=3456)
-        self.assertEqual(router.route_rtcp(packet), set([sender]))
+        self.assertEqual(router.route_rtcp(packet), {sender})
 
         # PSFB - REMB
         packet = RtcpPsfbPacket(
@@ -495,7 +495,7 @@ class RtpRouterTest(TestCase):
             media_ssrc=0,
             fci=pack_remb_fci(4160000, [3456]),
         )
-        self.assertEqual(router.route_rtcp(packet), set([sender]))
+        self.assertEqual(router.route_rtcp(packet), {sender})
 
         # PSFB - JUNK
         packet = RtcpPsfbPacket(fmt=RTCP_PSFB_APP, ssrc=1234, media_ssrc=0, fci=b"JUNK")
@@ -503,7 +503,7 @@ class RtpRouterTest(TestCase):
 
         # RTPFB
         packet = RtcpRtpfbPacket(fmt=RTCP_RTPFB_NACK, ssrc=1234, media_ssrc=3456)
-        self.assertEqual(router.route_rtcp(packet), set([sender]))
+        self.assertEqual(router.route_rtcp(packet), {sender})
 
     def test_route_rtp(self):
         receiver1 = object()

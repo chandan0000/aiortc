@@ -535,9 +535,7 @@ class RTCPeerConnectionTest(TestCase):
 
     def assertHasDtls(self, description, setup):
         self.assertTrue("a=fingerprint:sha-256" in description.sdp)
-        self.assertEqual(
-            set(re.findall("a=setup:(.*)\r$", description.sdp)), set([setup])
-        )
+        self.assertEqual(set(re.findall("a=setup:(.*)\r$", description.sdp)), {setup})
 
     async def closeDataChannel(self, dc):
         dc.close()
@@ -3243,7 +3241,7 @@ a=rtpmap:0 PCMU/8000
             def on_message(message):
                 pc2_data_messages.append(message)
                 if isinstance(message, str):
-                    channel.send("string-echo: " + message)
+                    channel.send(f"string-echo: {message}")
                 else:
                     channel.send(b"binary-echo: " + message)
 
@@ -3411,7 +3409,7 @@ a=rtpmap:0 PCMU/8000
             def on_message(message):
                 pc2_data_messages.append(message)
                 if isinstance(message, str):
-                    channel.send("string-echo: " + message)
+                    channel.send(f"string-echo: {message}")
                 else:
                     channel.send(b"binary-echo: " + message)
 
@@ -3590,7 +3588,7 @@ a=rtpmap:0 PCMU/8000
         def on_message2(message):
             pc2_data_messages.append(message)
             if isinstance(message, str):
-                dc2.send("string-echo: " + message)
+                dc2.send(f"string-echo: {message}")
             else:
                 dc2.send(b"binary-echo: " + message)
 
@@ -3810,7 +3808,7 @@ a=rtpmap:0 PCMU/8000
             def on_message(message):
                 pc2_data_messages.append(message)
                 if isinstance(message, str):
-                    channel.send("string-echo: " + message)
+                    channel.send(f"string-echo: {message}")
                 else:
                     channel.send(b"binary-echo: " + message)
 
@@ -4040,7 +4038,7 @@ a=rtpmap:0 PCMU/8000
             def on_message(message):
                 pc2_data_messages.append(message)
                 if isinstance(message, str):
-                    channel.send("string-echo: " + message)
+                    channel.send(f"string-echo: {message}")
                 else:
                     channel.send(b"binary-echo: " + message)
 
@@ -4212,7 +4210,7 @@ a=rtpmap:0 PCMU/8000
             @channel.on("message")
             def on_message(message):
                 pc2_data_messages.append(message)
-                channel.send("string-echo: " + message)
+                channel.send(f"string-echo: {message}")
 
         # create data channel
         dc = pc1.createDataChannel("chat", maxPacketLifeTime=500, protocol="bob")
@@ -4318,7 +4316,7 @@ a=rtpmap:0 PCMU/8000
             @channel.on("message")
             def on_message(message):
                 pc2_data_messages.append(message)
-                channel.send("string-echo: " + message)
+                channel.send(f"string-echo: {message}")
 
         # create data channel
         dc = pc1.createDataChannel("chat", maxRetransmits=0, protocol="bob")
@@ -4424,7 +4422,7 @@ a=rtpmap:0 PCMU/8000
             @channel.on("message")
             def on_message(message):
                 pc2_data_messages.append(message)
-                channel.send("string-echo: " + message)
+                channel.send(f"string-echo: {message}")
 
         # create data channel
         dc = pc1.createDataChannel("chat", ordered=False, protocol="bob")
@@ -4625,12 +4623,11 @@ a=rtpmap:0 PCMU/8000
         pc1.addTrack(AudioStreamTrack())
         offer = await pc1.createOffer()
 
-        mangled_sdp = []
-        for line in offer.sdp.split("\n"):
-            if line.startswith("a=rtpmap:"):
-                continue
-            mangled_sdp.append(line)
-
+        mangled_sdp = [
+            line
+            for line in offer.sdp.split("\n")
+            if not line.startswith("a=rtpmap:")
+        ]
         mangled = RTCSessionDescription(sdp="\n".join(mangled_sdp), type=offer.type)
 
         with self.assertRaises(OperationError) as cm:

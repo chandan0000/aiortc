@@ -113,9 +113,7 @@ class H264Decoder(Decoder):
             packet.time_base = VIDEO_TIME_BASE
             frames = self.codec.decode(packet)
         except av.AVError as e:
-            logger.warning(
-                "H264Decoder() failed to decode, skipping package: " + str(e)
-            )
+            logger.warning(f"H264Decoder() failed to decode, skipping package: {str(e)}")
             return []
 
         return frames
@@ -216,10 +214,7 @@ class H264Encoder(Encoder):
         except StopIteration:
             nalu = None
 
-        if counter <= 1:
-            return data, nalu
-        else:
-            return bytes([stap_header]) + payload, nalu
+        return (data, nalu) if counter <= 1 else (bytes([stap_header]) + payload, nalu)
 
     @staticmethod
     def _split_bitstream(buf: bytes) -> Iterator[bytes]:
@@ -241,7 +236,7 @@ class H264Encoder(Encoder):
             # Find the end of the NAL unit (end of buffer OR next start code)
             i = buf.find(b"\x00\x00\x01", i)
             if i == -1:
-                yield buf[nal_start : len(buf)]
+                yield buf[nal_start:]
                 return
             elif buf[i - 1] == 0:
                 # 4-byte start code case, jump back one byte

@@ -10,7 +10,7 @@ logger = logging.Logger("vpn")
 
 
 def channel_log(channel, t, message):
-    logger.info("channel(%s) %s %s" % (channel.label, t, repr(message)))
+    logger.info(f"channel({channel.label}) {t} {repr(message)}")
 
 
 async def consume_signaling(pc, signaling):
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     if args.verbose:
         logging.basicConfig(level=logging.DEBUG)
 
-    tap = tuntap.Tun(name="revpn-%s" % args.role)
+    tap = tuntap.Tun(name=f"revpn-{args.role}")
 
     signaling = create_signaling(args)
     pc = RTCPeerConnection()

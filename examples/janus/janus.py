@@ -13,7 +13,7 @@ pcs = set()
 
 
 def transaction_id():
-    return "".join(random.choice(string.ascii_letters) for x in range(12))
+    return "".join(random.choice(string.ascii_letters) for _ in range(12))
 
 
 class JanusPlugin:
@@ -52,7 +52,7 @@ class JanusSession:
             data = await response.json()
             assert data["janus"] == "success"
             plugin_id = data["data"]["id"]
-            plugin = JanusPlugin(self, self._session_url + "/" + str(plugin_id))
+            plugin = JanusPlugin(self, f"{self._session_url}/{str(plugin_id)}")
             self._plugins[plugin_id] = plugin
             return plugin
 
@@ -63,7 +63,7 @@ class JanusSession:
             data = await response.json()
             assert data["janus"] == "success"
             session_id = data["data"]["id"]
-            self._session_url = self._root_url + "/" + str(session_id)
+            self._session_url = f"{self._root_url}/{str(session_id)}"
 
         self._poll_task = asyncio.ensure_future(self._poll())
 
@@ -89,8 +89,7 @@ class JanusSession:
             async with self._http.get(self._session_url, params=params) as response:
                 data = await response.json()
                 if data["janus"] == "event":
-                    plugin = self._plugins.get(data["sender"], None)
-                    if plugin:
+                    if plugin := self._plugins.get(data["sender"], None):
                         await plugin._queue.put(data)
                     else:
                         print(data)
@@ -143,7 +142,7 @@ async def subscribe(session, room, feed, recorder):
 
     @pc.on("track")
     async def on_track(track):
-        print("Track %s received" % track.kind)
+        print(f"Track {track.kind} received")
         if track.kind == "video":
             recorder.addTrack(track)
         if track.kind == "audio":
@@ -245,11 +244,7 @@ if __name__ == "__main__":
         player = None
 
     # create media sink
-    if args.record_to:
-        recorder = MediaRecorder(args.record_to)
-    else:
-        recorder = None
-
+    recorder = MediaRecorder(args.record_to) if args.record_to else None
     loop = asyncio.get_event_loop()
     try:
         loop.run_until_complete(
