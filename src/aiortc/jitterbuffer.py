@@ -19,7 +19,7 @@ class JitterBuffer:
         assert capacity & (capacity - 1) == 0, "capacity must be a power of 2"
         self._capacity = capacity
         self._origin: Optional[int] = None
-        self._packets: List[Optional[RtpPacket]] = [None for i in range(capacity)]
+        self._packets: List[Optional[RtpPacket]] = [None for _ in range(capacity)]
         self._prefetch = prefetch
         self._is_video = is_video
 
@@ -38,15 +38,14 @@ class JitterBuffer:
             misorder = uint16_add(self._origin, -packet.sequence_number)
 
         if misorder < delta:
-            if misorder >= MAX_MISORDER:
-                self.remove(self.capacity)
-                self._origin = packet.sequence_number
-                delta = misorder = 0
-                if self._is_video:
-                    pli_flag = True
-            else:
+            if misorder < MAX_MISORDER:
                 return pli_flag, None
 
+            self.remove(self.capacity)
+            self._origin = packet.sequence_number
+            delta = misorder = 0
+            if self._is_video:
+                pli_flag = True
         if delta >= self.capacity:
             # remove just enough frames to fit the received packets
             excess = delta - self.capacity + 1
@@ -98,7 +97,7 @@ class JitterBuffer:
 
     def remove(self, count: int) -> None:
         assert count <= self._capacity
-        for i in range(count):
+        for _ in range(count):
             pos = self._origin % self._capacity
             self._packets[pos] = None
             self._origin = uint16_add(self._origin, 1)

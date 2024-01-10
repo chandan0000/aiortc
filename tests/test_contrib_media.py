@@ -186,7 +186,7 @@ class MediaRelayTest(MediaTestCase):
         proxy1.stop()
 
         # continue reading
-        for i in range(2):
+        for _ in range(2):
             exc1, frame2 = await asyncio.gather(
                 proxy1.recv(), proxy2.recv(), return_exceptions=True
             )
@@ -222,7 +222,7 @@ class MediaRelayTest(MediaTestCase):
         proxy1.stop()
 
         # continue reading
-        for i in range(2):
+        for _ in range(2):
             exc1, frame2 = await asyncio.gather(
                 proxy1.recv(), proxy2.recv(), return_exceptions=True
             )
@@ -259,7 +259,7 @@ class MediaRelayTest(MediaTestCase):
 
         # continue reading
         await asyncio.gather(proxy1.recv(), proxy2.recv())
-        for i in range(2):
+        for _ in range(2):
             exc1, exc2 = await asyncio.gather(
                 proxy1.recv(), proxy2.recv(), return_exceptions=True
             )
@@ -292,7 +292,7 @@ class MediaRelayTest(MediaTestCase):
         source.stop()
 
         # continue reading
-        for i in range(2):
+        for _ in range(2):
             exc1, exc2 = await asyncio.gather(
                 proxy1.recv(), proxy2.recv(), return_exceptions=True
             )
@@ -340,7 +340,7 @@ class MediaRelayTest(MediaTestCase):
         proxy1.stop()
 
         # continue reading
-        for i in range(2):
+        for _ in range(2):
             exc1, frame2 = await asyncio.gather(
                 proxy1.recv(), proxy2.recv(), return_exceptions=True
             )
@@ -455,7 +455,7 @@ class MediaPlayerTest(MediaTestCase):
         else:
             # read all frames, then loop and re-read all frames
             self.assertEqual(player.audio.readyState, "live")
-            for i in range(100):
+            for _ in range(100):
                 frame = await player.audio.recv()
                 self.assertAudio(frame)
 
@@ -478,14 +478,14 @@ class MediaPlayerTest(MediaTestCase):
         # read some frames
         self.assertEqual(player.audio.readyState, "live")
         self.assertEqual(player.video.readyState, "live")
-        for i in range(10):
+        for _ in range(10):
             await asyncio.gather(player.audio.recv(), player.video.recv())
 
         # stop audio track
         player.audio.stop()
 
         # continue reading
-        for i in range(10):
+        for _ in range(10):
             with self.assertRaises(MediaStreamError):
                 await player.audio.recv()
             await player.video.recv()
@@ -514,7 +514,7 @@ class MediaPlayerTest(MediaTestCase):
 
             # read all frames
             self.assertEqual(player.video.readyState, "live")
-            for i in range(90):
+            for _ in range(90):
                 frame = await player.video.recv()
                 self.assertVideo(frame)
             with self.assertRaises(MediaStreamError):
@@ -538,7 +538,7 @@ class MediaPlayerTest(MediaTestCase):
         self.assertEqual(player.video.readyState, "live")
         error_count = 0
         received_count = 0
-        for i in range(100):
+        for _ in range(100):
             try:
                 frame = await player.video.recv()
                 self.assertVideo(frame)
@@ -557,7 +557,7 @@ class MediaPlayerTest(MediaTestCase):
 
         # read all frames, then loop and re-read all frames
         self.assertEqual(player.video.readyState, "live")
-        for i in range(100):
+        for _ in range(100):
             frame = await player.video.recv()
             self.assertVideo(frame)
 
@@ -583,7 +583,7 @@ class MediaPlayerTest(MediaTestCase):
 
             # read all frames
             self.assertEqual(player.video.readyState, "live")
-            for i in range(90):
+            for _ in range(90):
                 frame = await player.video.recv()
                 self.assertVideo(frame)
             with self.assertRaises(MediaStreamError):

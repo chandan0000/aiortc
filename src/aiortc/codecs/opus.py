@@ -98,7 +98,7 @@ class OpusEncoder(Encoder):
         )
         assert length > 0
 
-        return [self.buffer[0:length]], timestamp
+        return [self.buffer[:length]], timestamp
 
     def pack(self, packet: Packet) -> Tuple[List[bytes], int]:
         timestamp = convert_timebase(packet.pts, packet.time_base, TIME_BASE)

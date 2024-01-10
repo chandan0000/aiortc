@@ -436,13 +436,12 @@ class MediaRecorder:
             else:
                 codec_name = "aac"
             stream = self.__container.add_stream(codec_name)
+        elif self.__container.format.name == "image2":
+            stream = self.__container.add_stream("png", rate=30)
+            stream.pix_fmt = "rgb24"
         else:
-            if self.__container.format.name == "image2":
-                stream = self.__container.add_stream("png", rate=30)
-                stream.pix_fmt = "rgb24"
-            else:
-                stream = self.__container.add_stream("libx264", rate=30)
-                stream.pix_fmt = "yuv420p"
+            stream = self.__container.add_stream("libx264", rate=30)
+            stream.pix_fmt = "yuv420p"
         self.__tracks[track] = MediaRecorderContext(stream)
 
     async def start(self):
@@ -466,9 +465,9 @@ class MediaRecorder:
                         self.__container.mux(packet)
             self.__tracks = {}
 
-            if self.__container:
-                self.__container.close()
-                self.__container = None
+        if self.__container:
+            self.__container.close()
+            self.__container = None
 
     async def __run_track(self, track: MediaStreamTrack, context: MediaRecorderContext):
         while True:
@@ -583,7 +582,7 @@ class MediaRelay:
         logger.debug(f"MediaRelay(%s) {msg}", id(self), *args)
 
     async def __run_track(self, track: MediaStreamTrack) -> None:
-        self.__log_debug("Start reading source %s" % id(track))
+        self.__log_debug(f"Start reading source {id(track)}")
 
         while True:
             try:

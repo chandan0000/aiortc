@@ -164,10 +164,7 @@ def parameters_from_sdp(sdp: str) -> ParametersDict:
     for param in sdp.split(";"):
         if "=" in param:
             k, v = param.split("=", 1)
-            if k in FMTP_INT_PARAMETERS:
-                parameters[k] = int(v)
-            else:
-                parameters[k] = v
+            parameters[k] = int(v) if k in FMTP_INT_PARAMETERS else v
         else:
             parameters[param] = None
     return parameters
@@ -184,11 +181,10 @@ def parameters_to_sdp(parameters: ParametersDict) -> str:
 
 
 def parse_attr(line: str) -> Tuple[str, Optional[str]]:
-    if ":" in line:
-        bits = line[2:].split(":", 1)
-        return bits[0], bits[1]
-    else:
+    if ":" not in line:
         return line[2:], None
+    bits = line[2:].split(":", 1)
+    return bits[0], bits[1]
 
 
 def parse_h264_profile_level_id(profile_str: str) -> Tuple[H264Profile, H264Level]:
@@ -199,7 +195,7 @@ def parse_h264_profile_level_id(profile_str: str) -> Tuple[H264Profile, H264Leve
 
     level_idc = int(profile_str[4:6], 16)
     profile_iop = int(profile_str[2:4], 16)
-    profile_idc = int(profile_str[0:2], 16)
+    profile_idc = int(profile_str[:2], 16)
 
     level: H264Level
     if level_idc == H264Level.LEVEL1_1:
@@ -226,8 +222,7 @@ class GroupDescription:
 
 
 def parse_group(dest: List[GroupDescription], value: str, type=str) -> None:
-    bits = value.split()
-    if bits:
+    if bits := value.split():
         dest.append(GroupDescription(semantic=bits[0], items=list(map(type, bits[1:]))))
 
 
@@ -281,18 +276,18 @@ class MediaDescription:
         self.ice_options: Optional[str] = None
 
     def __str__(self) -> str:
-        lines = []
-        lines.append(
+        lines = [
             f"m={self.kind} {self.port} {self.profile} {' '.join(map(str, self.fmt))}"
-        )
+        ]
         if self.host is not None:
             lines.append(f"c={ipaddress_to_sdp(self.host)}")
         if self.direction is not None:
             lines.append(f"a={self.direction}")
 
-        for header in self.rtp.headerExtensions:
-            lines.append(f"a=extmap:{header.id} {header.uri}")
-
+        lines.extend(
+            f"a=extmap:{header.id} {header.uri}"
+            for header in self.rtp.headerExtensions
+        )
         if self.rtp.muxId:
             lines.append(f"a=mid:{self.rtp.muxId}")
 
@@ -304,8 +299,7 @@ class MediaDescription:
             if self.rtcp_mux:
                 lines.append("a=rtcp-mux")
 
-        for group in self.ssrc_group:
-            lines.append(f"a=ssrc-group:{group}")
+        lines.extend(f"a=ssrc-group:{group}" for group in self.ssrc_group)
         for ssrc_info in self.ssrc:
             for ssrc_attr in SSRC_INFO_ATTRS:
                 ssrc_value = getattr(ssrc_info, ssrc_attr)
@@ -322,21 +316,20 @@ class MediaDescription:
                     value += f" {feedback.parameter}"
                 lines.append(f"a=rtcp-fb:{codec.payloadType} {value}")
 
-            # parameters
-            params = parameters_to_sdp(codec.parameters)
-            if params:
+            if params := parameters_to_sdp(codec.parameters):
                 lines.append(f"a=fmtp:{codec.payloadType} {params}")
 
-        for k, v in self.sctpmap.items():
-            lines.append(f"a=sctpmap:{k} {v}")
+        lines.extend(f"a=sctpmap:{k} {v}" for k, v in self.sctpmap.items())
         if self.sctp_port is not None:
             lines.append(f"a=sctp-port:{self.sctp_port}")
         if self.sctpCapabilities is not None:
             lines.append(f"a=max-message-size:{self.sctpCapabilities.maxMessageSize}")
 
         # ice
-        for candidate in self.ice_candidates:
-            lines.append("a=candidate:" + candidate_to_sdp(candidate))
+        lines.extend(
+            f"a=candidate:{candidate_to_sdp(candidate)}"
+            for candidate in self.ice_candidates
+        )
         if self.ice_candidates_complete:
             lines.append("a=end-of-candidates")
         if self.ice.usernameFragment is not None:
@@ -348,10 +341,10 @@ class MediaDescription:
 
         # dtls
         if self.dtls:
-            for fingerprint in self.dtls.fingerprints:
-                lines.append(
-                    f"a=fingerprint:{fingerprint.algorithm} {fingerprint.value}"
-                )
+            lines.extend(
+                f"a=fingerprint:{fingerprint.algorithm} {fingerprint.value}"
+                for fingerprint in self.dtls.fingerprints
+            )
             lines.append(f"a=setup:{DTLS_ROLE_SETUP[self.dtls.role]}")
 
         return "\r\n".join(lines) + "\r\n"
@@ -498,14 +491,11 @@ class SessionDescription:
                         format_id, format_desc = value.split(" ", 1)
                         bits = format_desc.split("/")
                         if current_media.kind == "audio":
-                            if len(bits) > 2:
-                                channels = int(bits[2])
-                            else:
-                                channels = 1
+                            channels = int(bits[2]) if len(bits) > 2 else 1
                         else:
                             channels = None
                         codec = RTCRtpCodecParameters(
-                            mimeType=current_media.kind + "/" + bits[0],
+                            mimeType=f"{current_media.kind}/{bits[0]}",
                             channels=channels,
                             clockRate=int(bits[1]),
                             payloadType=int(format_id),

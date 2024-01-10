@@ -73,12 +73,12 @@ class RTCDataChannel(AsyncIOEventEmitter):
                 "if data channel is negotiated out-of-band"
             )
 
-        if not self.__parameters.negotiated:
-            if self.__send_open:
-                self.__send_open = False
-                self.__transport._data_channel_open(self)
-        else:
+        if self.__parameters.negotiated:
             self.__transport._data_channel_add_negotiated(self)
+
+        elif self.__send_open:
+            self.__send_open = False
+            self.__transport._data_channel_open(self)
 
     @property
     def bufferedAmount(self) -> int:

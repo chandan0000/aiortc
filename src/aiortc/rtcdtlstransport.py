@@ -293,7 +293,7 @@ class RTCDtlsTransport(AsyncIOEventEmitter):
         self._rtp_header_extensions_map = rtp.HeaderExtensionsMap()
         self._rtp_router = RtpRouter()
         self._state = State.NEW
-        self._stats_id = "transport_" + str(id(self))
+        self._stats_id = f"transport_{id(self)}"
         self._task: Optional[asyncio.Future[None]] = None
         self._transport = transport
 
@@ -348,10 +348,6 @@ class RTCDtlsTransport(AsyncIOEventEmitter):
         assert self._state == State.NEW
         assert len(remoteParameters.fingerprints)
 
-        # For WebRTC, the DTLS role is explicitly determined as part of the
-        # offer / answer exchange.
-        #
-        # For ORTC however, we determine the DTLS role based on the ICE role.
         if self._role == "auto":
             if self.transport.role == "controlling":
                 self._set_role("server")
@@ -385,14 +381,13 @@ class RTCDtlsTransport(AsyncIOEventEmitter):
         # check remote fingerprint
         x509 = self.ssl.get_peer_certificate()
         remote_fingerprint = certificate_digest(x509)
-        fingerprint_is_valid = False
-        for f in remoteParameters.fingerprints:
-            if (
+        fingerprint_is_valid = any(
+            (
                 f.algorithm.lower() == "sha-256"
                 and f.value.lower() == remote_fingerprint.lower()
-            ):
-                fingerprint_is_valid = True
-                break
+            )
+            for f in remoteParameters.fingerprints
+        )
         if not fingerprint_is_valid:
             self.__log_debug("x DTLS handshake failed (fingerprint mismatch)")
             self._set_state(State.FAILED)
@@ -501,11 +496,7 @@ class RTCDtlsTransport(AsyncIOEventEmitter):
             await receiver._handle_rtp_packet(packet, arrival_time_ms=arrival_time_ms)
 
     async def _recv_next(self) -> None:
-        # get timeout
-        timeout = None
-        if not self.encrypted:
-            timeout = self.ssl.DTLSv1_get_timeout()
-
+        timeout = self.ssl.DTLSv1_get_timeout() if not self.encrypted else None
         # receive next datagram
         if timeout is not None:
             try:
@@ -557,10 +548,7 @@ class RTCDtlsTransport(AsyncIOEventEmitter):
     def _register_rtp_receiver(
         self, receiver, parameters: RTCRtpReceiveParameters
     ) -> None:
-        ssrcs = set()
-        for encoding in parameters.encodings:
-            ssrcs.add(encoding.ssrc)
-
+        ssrcs = {encoding.ssrc for encoding in parameters.encodings}
         self._rtp_header_extensions_map.configure(parameters)
         self._rtp_router.register_receiver(
             receiver,

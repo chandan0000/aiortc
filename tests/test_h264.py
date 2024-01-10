@@ -50,15 +50,15 @@ class H264PayloadDescriptorTest(TestCase):
         payload = load("h264_0000.bin")
 
         with self.assertRaises(ValueError) as cm:
-            H264PayloadDescriptor.parse(payload[0:1])
+            H264PayloadDescriptor.parse(payload[:1])
         self.assertEqual(str(cm.exception), "NAL unit is too short")
 
         with self.assertRaises(ValueError) as cm:
-            H264PayloadDescriptor.parse(payload[0:2])
+            H264PayloadDescriptor.parse(payload[:2])
         self.assertEqual(str(cm.exception), "STAP-A length field is truncated")
 
         with self.assertRaises(ValueError) as cm:
-            H264PayloadDescriptor.parse(payload[0:3])
+            H264PayloadDescriptor.parse(payload[:3])
         self.assertEqual(str(cm.exception), "STAP-A data is truncated")
 
     def test_parse_stap_b(self):
@@ -285,7 +285,7 @@ class H264Test(CodecTestCase):
 
         self.assertGreaterEqual(len(packages), 3)
         # first frame must have at least
-        set(p[0] & 0x1F for p in packages).issuperset(
+        {p[0] & 0x1F for p in packages}.issuperset(
             {
                 8,  # PPS (picture parameter set)
                 7,  # SPS (session parameter set)

@@ -29,7 +29,7 @@ def object_to_string(obj):
         message = {"sdp": obj.sdp, "type": obj.type}
     elif isinstance(obj, RTCIceCandidate):
         message = {
-            "candidate": "candidate:" + candidate_to_sdp(obj),
+            "candidate": f"candidate:{candidate_to_sdp(obj)}",
             "id": obj.sdpMid,
             "label": obj.sdpMLineIndex,
             "type": "candidate",

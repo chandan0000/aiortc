@@ -387,7 +387,7 @@ class RTCRtpSenderTest(TestCase):
             self.assertIsNotNone(found_rtx)
             self.assertEqual(found_rtx.payload_type, 101)
             self.assertEqual(found_rtx.ssrc, 2345)
-            self.assertEqual(found_rtx.payload[0:2], pack("!H", packet.sequence_number))
+            self.assertEqual(found_rtx.payload[:2], pack("!H", packet.sequence_number))
 
     @asynctest
     async def test_stop(self):
